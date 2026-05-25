@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenser — Project Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #06060b;
+            --bg-secondary: #0c0c14;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f0f5;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.15);
+            --accent-2: #06b6d4;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Presentation Slide Container */
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4rem 6rem;
+            position: relative;
+            background-color: var(--bg-primary);
+            border-bottom: 1px solid var(--border);
+            page-break-after: always;
+            overflow: hidden;
+        }
+
+        /* Ambient glows for slides */
+        .slide::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            background: radial-gradient(ellipse, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            right: -10%;
+            width: 600px;
+            height: 500px;
+            background: radial-gradient(ellipse, rgba(6, 182, 212, 0.04) 0%, transparent 70%);
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1.5rem;
+            z-index: 10;
+            position: relative;
+        }
+
+        .slide-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 800;
+            font-size: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 18px;
+            height: 18px;
+            color: white;
+        }
+
+        .slide-topic {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4rem;
+            padding: 3rem 0;
+            z-index: 10;
+            position: relative;
+        }
+
+        .slide-text {
+            flex: 1;
+            max-width: 600px;
+        }
+
+        .slide-title {
+            font-size: 2.75rem;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.5rem;
+        }
+
+        .slide-title .gradient-text {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-desc {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .slide-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .slide-bullets li {
+            position: relative;
+            padding-left: 2rem;
+            font-size: 1.05rem;
+            font-weight: 500;
+        }
+
+        .slide-bullets li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .slide-visual {
+            flex: 1.2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .visual-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        .visual-img {
+            max-width: 100%;
+            max-height: 480px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            object-fit: contain;
+        }
+
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* Slide Specific Layouts */
+        /* Title Slide */
+        .slide-title-deck {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .title-deck-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin: auto;
+        }
+
+        .title-deck-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .title-deck-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .title-deck-h1 {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+        }
+
+        .title-deck-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 2rem;
+        }
+
+        .title-deck-team {
+            display: flex;
+            gap: 3rem;
+            margin-top: 2rem;
+            border-top: 1px solid var(--border);
+            padding-top: 2rem;
+        }
+
+        .team-member {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .team-member-role {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .team-member-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Tech stack icons layout */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tech-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .tech-info h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .tech-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Code visual style */
+        .code-container {
+            width: 100%;
+            background: #09090e;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            color: #a9b7c6;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.5);
+        }
+
+        .code-comment { color: #808080; }
+        .code-keyword { color: #cc7832; }
+        .code-string { color: #6a8759; }
+        .code-function { color: #ffc66d; }
+
+        /* Print Media Styles to prevent cuts and margins */
+        @media print {
+            body {
+                background: #000;
+            }
+            .slide {
+                width: 100vw;
+                height: 100vh;
+                page-break-after: always;
+                page-break-inside: avoid;
+                border-bottom: none;
+                padding: 3rem 4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1: Title -->
+    <section class="slide" style="justify-content: center;">
+        <div class="title-deck-content">
+            <div class="title-deck-badge">
+                <span class="title-deck-badge-dot"></span>
+                Full-Stack Laravel Web Application
+            </div>
+            <h1 class="title-deck-h1">Expenser</h1>
+            <p class="title-deck-subtitle">A Premium, Elegant Group Expense-Sharing & Debt Settlement Platform</p>
+            
+            <div class="title-deck-team">
+                <div class="team-member">
+                    <span class="team-member-role">Full-Stack Dev</span>
+                    <span class="team-member-name">Lead Developer</span>
+                </div>
+                <div class="team-member">
+                    <span class="team-member-role">UI/UX Architect</span>
+                    <span class="team-member-name">Design Specialist</span>
+                </div>
+                <div class="team-member">
+                    <span class="team-member-role">Algorithm Engineer</span>
+                    <span class="team-member-name">Systems Engineer</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 2: Introduction -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">01 / Introduction</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">The Challenge of <span class="gradient-text">Group Expenses</span></h2>
+                <p class="slide-desc">Managing shared finances during trips, room shares, or group dinners is historically tedious and prone to friction.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Tracking complexity:</strong> Who paid what, when, and for whom?</li>
+                    <li><strong>Flexible splits:</strong> Not all bills are shared equally.</li>
+                    <li><strong>Settlement chaos:</strong> Dozens of messy peer-to-peer transfers.</li>
+                    <li><strong>Expenser Solution:</strong> A premium, real-time shared ledger that automatically calculates shares, validates balances, and minimizes transfer routes.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/landing.png" alt="Landing Page">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 2</span>
+        </div>
+    </section>
+
+    <!-- Slide 3: Core Features -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">02 / System Capabilities</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Rich, Flexible <span class="gradient-text">Feature Suite</span></h2>
+                <p class="slide-desc">Expenser goes beyond basic logging, incorporating dynamic user authentication, full group control, and detailed financial ledger capabilities.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Group Membership:</strong> Create custom spaces (e.g. trips, flats) and add users by email in real-time.</li>
+                    <li><strong>Dynamic Splits:</strong> Split equally, by exact amount, or by percentage.</li>
+                    <li><strong>Smart Ledger:</strong> Detailed, audited log of every expense and settlement payment.</li>
+                    <li><strong>Direct Settle:</strong> Integrated system to register peer-to-peer payments and clear balances in a single click.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/dashboard.png" alt="Dashboard">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 3</span>
+        </div>
+    </section>
+
+    <!-- Slide 4: Technology Stack -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">03 / Tech Stack</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Engineered for <span class="gradient-text">Stability & Speed</span></h2>
+                <p class="slide-desc">Leveraging modern web architecture to deliver a robust, highly responsive, and clean development ecosystem.</p>
+                <div class="tech-grid">
+                    <div class="tech-card">
+                        <div class="tech-icon">L</div>
+                        <div class="tech-info">
+                            <h4>Laravel 12 Framework</h4>
+                            <p>Eloquent ORM, routing, middleware, Breeze Authentication scaffold.</p>
+                        </div>
+                    </div>
+                    <div class="tech-card">
+                        <div class="tech-icon">S</div>
+                        <div class="tech-info">
+                            <h4>SQLite / DB Engine</h4>
+                            <p>Fast relational database with structured tables & integrity constraints.</p>
+                        </div>
+                    </div>
+                    <div class="tech-card">
+                        <div class="tech-icon">V</div>
+                        <div class="tech-info">
+                            <h4>Vite Asset Pipeline</h4>
+                            <p>Extremely fast hot-reload asset bundling and build system.</p>
+                        </div>
+                    </div>
+                    <div class="tech-card">
+                        <div class="tech-icon">C</div>
+                        <div class="tech-info">
+                            <h4>Vanilla CSS3 & JS</h4>
+                            <p>Bespoke dark theme, responsive grids, custom CSS variables, zero heavy frameworks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/groups.png" alt="Groups List">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 4</span>
+        </div>
+    </section>
+
+    <!-- Slide 5: System Architecture -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">04 / System Architecture</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Relational Database & <span class="gradient-text">Models Layout</span></h2>
+                <p class="slide-desc">Clean database normalization prevents redundancy and ensures strict data integrity between members, transactions, shares, and groups.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Users & Groups:</strong> Many-to-many relationship tracked via `group_user` pivot table.</li>
+                    <li><strong>Expenses:</strong> Belongs to a single group and is paid by one user.</li>
+                    <li><strong>Expense Shares:</strong> Keeps individual share amounts per user per expense, allowing flexible split schemes.</li>
+                    <li><strong>Settlements:</strong> Links two users in a group to record peer-to-peer balance offsets.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <div class="visual-card">
+                    <h4 style="margin-bottom: 1.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em; color: var(--accent);">Database Schemas</h4>
+                    <div style="font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div><code><strong>Groups:</strong> id, name, description, created_by, timestamps</code></div>
+                        <div><code><strong>Group_User:</strong> group_id, user_id, joined_at</code></div>
+                        <div><code><strong>Expenses:</strong> id, group_id, paid_by, description, amount, split_type</code></div>
+                        <div><code><strong>Expense_Shares:</strong> id, expense_id, user_id, share_amount</code></div>
+                        <div><code><strong>Settlements:</strong> id, group_id, paid_by, paid_to, amount, note</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 5</span>
+        </div>
+    </section>
+
+    <!-- Slide 6: Balance Calculator -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">05 / Core Engine</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Real-Time Balance <span class="gradient-text">Calculation</span></h2>
+                <p class="slide-desc">The system computes live balances for all members dynamically, preventing desync errors and keeping accurate state.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Credit Step:</strong> Group expense payer gets credited `+Amount`.</li>
+                    <li><strong>Debit Step:</strong> Every sharing user gets debited `-Share_Amount`.</li>
+                    <li><strong>Settlement Correction:</strong> Peer settlements decrease the payer's balance and increase the receiver's balance.</li>
+                    <li><strong>Net Formula:</strong> `Balance = Paid_Expenses - Shared_Cost - Sent_Payments + Received_Payments`</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <div class="code-container">
+                    <span class="code-comment">// Balance calculation kernel</span>
+                    <br><span class="code-keyword">foreach</span> ($expenses <span class="code-keyword">as</span> $expense) {
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;$balances[$expense->paid_by] += $expense->amount;
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-keyword">foreach</span> ($expense->shares <span class="code-keyword">as</span> $share) {
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$balances[$share->user_id] -= $share->share_amount;
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;}
+                    <br>}
+                    <br><span class="code-keyword">foreach</span> ($settlements <span class="code-keyword">as</span> $settlement) {
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;$balances[$settlement->paid_by] -= $settlement->amount;
+                    <br>&nbsp;&nbsp;&nbsp;&nbsp;$balances[$settlement->paid_to] += $settlement->amount;
+                    <br>}
+                </div>
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 6</span>
+        </div>
+    </section>
+
+    <!-- Slide 7: Debt Simplification -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">06 / Algorithmic Core</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Min-Cash-Flow <span class="gradient-text">Debt Simplification</span></h2>
+                <p class="slide-desc">Expenser implements a greedy algorithm to reduce peer-to-peer transfers, resolving group debts in the fewest transactions possible.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Algorithm Class:</strong> Greedy optimization (Min Cash Flow).</li>
+                    <li><strong>State Separation:</strong> Members divided into Net Creditors and Net Debtors.</li>
+                    <li><strong>Greedy Step:</strong> Matches the largest creditor with the largest debtor and schedules a direct payment.</li>
+                    <li><strong>Effect:</strong> Reduces a group of N members from potentially N*(N-1) transfers down to a maximum of N-1 transfers.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/group_detail.png" alt="Group Details showing simplified debts">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 7</span>
+        </div>
+    </section>
+
+    <!-- Slide 8: Interactive Forms -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">07 / Interactive UI</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Dynamic & Smart <span class="gradient-text">Expense Logging</span></h2>
+                <p class="slide-desc">Built with custom JavaScript to validate splits interactively, giving immediate feedback to prevent math errors before submission.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Live Calculation:</strong> Displays split outcomes immediately as values change.</li>
+                    <li><strong>Validation:</strong> Exact amounts must sum to the total; percentages must equal exactly 100%.</li>
+                    <li><strong>Error Handling:</strong> Warns users if the values are unbalanced before submission.</li>
+                    <li><strong>Reminders:</strong> Rounding remainders are handled by allocating to the primary payer.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/add_expense.png" alt="Add Expense UI">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 8</span>
+        </div>
+    </section>
+
+    <!-- Slide 9: Custom CSS Design -->
+    <section class="slide">
+        <div class="slide-header">
+            <div class="slide-logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <span>Expenser</span>
+            </div>
+            <span class="slide-topic">08 / UI Aesthetics</span>
+        </div>
+        <div class="slide-content">
+            <div class="slide-text">
+                <h2 class="slide-title">Custom Dark Theme & <span class="gradient-text">Glassmorphism</span></h2>
+                <p class="slide-desc">Crafted from the ground up without UI frameworks to ensure a highly responsive, modern, and lightweight design system.</p>
+                <ul class="slide-bullets">
+                    <li><strong>Color System:</strong> HSL curated deep dark background tones mixed with emerald and teal primary colors.</li>
+                    <li><strong>Backdrop Filters:</strong> Frosted glass transparency overlays with fine borders.</li>
+                    <li><strong>Fluid Animations:</strong> GPU-accelerated translate hover states and keyframe fade-in transitions.</li>
+                    <li><strong>Responsive Flex:</strong> Responsive sidebars and grids that adjust to all viewports.</li>
+                </ul>
+            </div>
+            <div class="slide-visual">
+                <img class="visual-img" src="screenshots/profile.png" alt="Profile UI">
+            </div>
+        </div>
+        <div class="slide-footer">
+            <span>Project Presentation</span>
+            <span>Slide 9</span>
+        </div>
+    </section>
+
+    <!-- Slide 10: Conclusion -->
+    <section class="slide" style="justify-content: center; text-align: center;">
+        <div class="title-deck-content" style="max-width: 800px; margin: auto;">
+            <div class="title-deck-badge">
+                <span class="title-deck-badge-dot" style="background: var(--accent-2);"></span>
+                09 / Conclusion & Future
+            </div>
+            <h2 class="title-deck-h1" style="font-size: 3.5rem; margin-bottom: 1.5rem;">Expenser Project <span class="gradient-text">Summary</span></h2>
+            <p class="title-deck-subtitle" style="font-size: 1.2rem; line-height: 1.7; margin-bottom: 2rem;">
+                Successfully created a fast, beautiful, and computationally efficient expense sharing system that minimizes financial friction and transaction routes in group settings.
+            </p>
+            <div style="display: flex; gap: 2rem; justify-content: center; width: 100%; text-align: left; margin-top: 1rem;">
+                <div class="visual-card" style="padding: 1.5rem 2rem; flex: 1;">
+                    <h4 style="color: var(--accent); margin-bottom: 0.5rem; font-weight: 700;">Accomplishments</h4>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>✓ Modern dark-themed user interfaces</li>
+                        <li>✓ 3 separate mathematical split structures</li>
+                        <li>✓ Greedy debt minimizer engine</li>
+                        <li>✓ Full responsiveness and auth flows</li>
+                    </ul>
+                </div>
+                <div class="visual-card" style="padding: 1.5rem 2rem; flex: 1;">
+                    <h4 style="color: var(--accent-2); margin-bottom: 0.5rem; font-weight: 700;">Future Vision</h4>
+                    <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        <li>• QR-code invitation links</li>
+                        <li>• Multi-currency support + exchange API</li>
+                        <li>• Push notifications & email summaries</li>
+                        <li>• Native mobile application wrap</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

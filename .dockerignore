@@ -1,0 +1,17 @@
+.git
+.env
+node_modules
+vendor
+tests
+phpunit.xml
+.phpunit.result.cache
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/logs/*
+docker-compose.yml
+Dockerfile
+.dockerignore
+.vercelignore
+vercel.json
+api/

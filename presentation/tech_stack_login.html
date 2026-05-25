@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenser — Tech Stack & Authentication Deep Dive</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #06060b;
+            --bg-secondary: #0c0c14;
+            --bg-card: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f0f0f5;
+            --text-secondary: rgba(255, 255, 255, 0.6);
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.15);
+            --accent-2: #06b6d4;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --notes-bg: #11111a;
+            --notes-border: rgba(255, 255, 255, 0.15);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a24;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        /* Portrait Presentation Page Layout for PDF Printing */
+        .presentation-page {
+            width: 8.5in;
+            height: 11in;
+            margin: 2rem auto;
+            background-color: var(--bg-primary);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 0.5in;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            page-break-after: always;
+        }
+
+        /* Ambient Glow Backgrounds */
+        .presentation-page::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(16, 185, 129, 0.04) 0%, transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .presentation-page::after {
+            content: '';
+            position: absolute;
+            bottom: 35%;
+            right: -10%;
+            width: 400px;
+            height: 300px;
+            background: radial-gradient(ellipse, rgba(6, 182, 212, 0.03) 0%, transparent 70%);
+            filter: blur(80px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Slide Container (Top Half) */
+        .slide-area {
+            height: 5.8in;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 2rem;
+            position: relative;
+            z-index: 10;
+            box-shadow: inset 0 0 20px rgba(255,255,255,0.01);
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+        }
+
+        .slide-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 800;
+            font-size: 1.1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-icon svg {
+            width: 14px;
+            height: 14px;
+            color: white;
+        }
+
+        .slide-topic {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 600;
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2rem;
+            padding: 1.5rem 0;
+            overflow: hidden;
+        }
+
+        .slide-text {
+            flex: 1.2;
+        }
+
+        .slide-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+        }
+
+        .slide-title .gradient-text {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slide-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .slide-bullets {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .slide-bullets li {
+            position: relative;
+            padding-left: 1.25rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .slide-bullets li strong {
+            color: var(--accent);
+        }
+
+        .slide-bullets li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        .slide-visual {
+            flex: 0.8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .visual-img {
+            max-width: 100%;
+            max-height: 220px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+            object-fit: contain;
+        }
+
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border);
+            padding-top: 0.75rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        /* Divider & Label for Notes */
+        .notes-divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.5rem 0;
+            z-index: 10;
+        }
+
+        .notes-divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .notes-divider-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        /* Speaker Notes Section (Bottom Half) */
+        .speaker-notes-area {
+            height: 3.2in;
+            background: var(--notes-bg);
+            border: 1px dashed var(--notes-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .notes-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent-2);
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .notes-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        .notes-script {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #d1d1db;
+        }
+
+        .notes-cues {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: auto;
+        }
+
+        .cue-tag {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.6rem;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .cue-tag.cue-action {
+            color: #ffb703;
+            border-color: rgba(255, 183, 3, 0.3);
+            background: rgba(255, 183, 3, 0.05);
+        }
+
+        .cue-tag.cue-highlight {
+            color: #06b6d4;
+            border-color: rgba(6, 182, 212, 0.3);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        /* Cover Slide Layout Override */
+        .cover-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            height: 100%;
+            gap: 1.25rem;
+            padding: 1.5rem;
+        }
+
+        .cover-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .cover-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+
+        .cover-h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            background: linear-gradient(135deg, var(--text-primary) 40%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .cover-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 550px;
+        }
+
+        .cover-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--border);
+            padding-top: 1rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Tech stack icons grid layout */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .tech-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: var(--accent);
+        }
+
+        .tech-info h4 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.1rem;
+        }
+
+        .tech-info p {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* Code Block Styling */
+        .code-container {
+            width: 100%;
+            background: #09090e;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.7rem;
+            line-height: 1.3;
+            color: #a9b7c6;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            text-align: left;
+        }
+
+        .code-comment { color: #808080; }
+        .code-keyword { color: #cc7832; }
+        .code-string { color: #6a8759; }
+        .code-function { color: #ffc66d; }
+
+        /* Print Media Styles to force exact dimensions */
+        @media print {
+            body {
+                background: #000;
+            }
+            .presentation-page {
+                margin: 0;
+                border: none;
+                box-shadow: none;
+                width: 8.5in;
+                height: 11in;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+            @page {
+                size: letter portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Slide 1: Cover Page -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="cover-content">
+                <div class="cover-badge">
+                    <span class="cover-badge-dot"></span>
+                    Expenser Full-Stack Application
+                </div>
+                <h1 class="cover-h1">Technical Architecture<br>& Authentication</h1>
+                <p class="cover-subtitle">A deep dive into the technology stack, application pipeline, and secure login architecture.</p>
+                
+                <div class="cover-meta">
+                    <div><strong>Project:</strong> Expenser</div>
+                    <div><strong>Focus:</strong> Backend, Assets, Auth</div>
+                    <div><strong>Format:</strong> Presenter Deck</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 1: Title & Presentation Introduction
+            </div>
+            <div class="notes-script">
+                "Hello everyone, and welcome. Today we are doing a technical deep dive into **Expenser**, which is a premium full-stack group expense-sharing and debt-simplification application. 
+                <br><br>
+                In this presentation, I am going to walk you through our selected technology stack—explaining why each component was chosen for speed and local independence—and then focus specifically on our custom dark-themed user login flow, looking at the Breeze authentication system, routing middlewares, and session security safeguards."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">▶ START PRESENTATION</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Local Independence & Security</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 2: Core Tech Stack -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">01 / Technology Stack</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Our Curated <span class="gradient-text">Core Stack</span></h2>
+                    <p class="slide-desc">We chose a lightweight, modern, and highly modular technology stack optimized for local execution speed and relational data integrity.</p>
+                    <div class="tech-grid">
+                        <div class="tech-card">
+                            <div class="tech-icon">PHP</div>
+                            <div class="tech-info">
+                                <h4>Laravel 12 Engine</h4>
+                                <p>Robust MVC structure, Eloquent ORM, middleware, Breeze Auth.</p>
+                            </div>
+                        </div>
+                        <div class="tech-card">
+                            <div class="tech-icon">SQL</div>
+                            <div class="tech-info">
+                                <h4>SQLite Database</h4>
+                                <p>High-speed, zero-config relational local file database.</p>
+                            </div>
+                        </div>
+                        <div class="tech-card">
+                            <div class="tech-icon">JS</div>
+                            <div class="tech-info">
+                                <h4>Vite Asset Pipeline</h4>
+                                <p>Fast hot-reload compilation of customized CSS and JS bundles.</p>
+                            </div>
+                        </div>
+                        <div class="tech-card">
+                            <div class="tech-icon">CSS</div>
+                            <div class="tech-info">
+                                <h4>Vanilla CSS & Alpine</h4>
+                                <p>Clean, custom HSL styling and micro-interactions without bloat.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Core Stack</span>
+                <span>Slide 2</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 2: Technology Stack Overview
+            </div>
+            <div class="notes-script">
+                "Let's look at the foundational components of Expenser. We selected a highly optimized, standard stack: 
+                <br><br>
+                1. **Laravel 12** serves as our backend core, providing secure routing, controller abstractions, session control, and the Eloquent ORM.
+                <br>
+                2. **SQLite** provides a fast, zero-configuration local database that allows the app to run independently of heavy external servers while maintaining strict foreign key constraints.
+                <br>
+                3. **Vite** is our build system, handling hot module replacement during development and compiling highly compressed assets for production.
+                <br>
+                4. **Vanilla CSS & AlpineJS** let us create a custom dark-themed UI without importing heavy design libraries. This keeps page sizes incredibly small."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">👉 Explain why SQLite is excellent for local dev</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Performance & Custom CSS</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 3: Relational Architecture -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">02 / Relational Architecture</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Data Schema & <span class="gradient-text">Relational Integrity</span></h2>
+                    <p class="slide-desc">Expenser structures data across 5 distinct tables using strict SQLite foreign keys and cascade triggers to prevent database orphans.</p>
+                    <ul class="slide-bullets">
+                        <li><strong>Groups & User Pivot:</strong> A many-to-many relationship (`group_user` table) tracks group members and joining dates.</li>
+                        <li><strong>Expenses:</strong> Belongs to a group and links to a specific paying user (`paid_by`).</li>
+                        <li><strong>Expense Shares:</strong> Stores individual user cost-shares, supporting equal, exact, or percentage splits.</li>
+                        <li><strong>Settlements:</strong> Records cash transfers between a debtor (`paid_by`) and creditor (`paid_to`).</li>
+                    </ul>
+                </div>
+                <div class="slide-visual">
+                    <div style="font-size: 0.75rem; text-align: left; display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-card); padding: 1rem; border-radius: 8px; border: 1px solid var(--border); width: 100%;">
+                        <div style="color: var(--accent); font-weight: 700; margin-bottom: 0.25rem;">DATABASE SCHEMAS:</div>
+                        <div><code><strong>users:</strong> id, name, email, password_hash</code></div>
+                        <div><code><strong>groups:</strong> id, name, description, created_by</code></div>
+                        <div><code><strong>group_user:</strong> group_id, user_id, joined_at</code></div>
+                        <div><code><strong>expenses:</strong> id, group_id, paid_by, amount, split_type</code></div>
+                        <div><code><strong>expense_shares:</strong> id, expense_id, user_id, share_amount</code></div>
+                        <div><code><strong>settlements:</strong> id, group_id, paid_by, paid_to, amount</code></div>
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Relational Schema</span>
+                <span>Slide 3</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 3: Database & Relationships
+            </div>
+            <div class="notes-script">
+                "Now let's review our relational model. A primary challenge in expense splitting is handling complex, flexible shares. 
+                <br><br>
+                To resolve this, we NORMALIZED our schema into five tables. Users and Groups share a many-to-many relationship managed through a pivot table. Every expense is owned by a group and paid by one user. Crucially, the individual split records are moved to an `expense_shares` table. This isolation is what allows Expenser to calculate arbitrary split amounts—whether equal, exact, or percentage-based—without polluting the main expenses table. 
+                <br><br>
+                Settlements exist as a separate ledger, allowing users to clear balances through peer-to-peer record tracking."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-highlight">💡 Explain the expense_shares table isolation</span>
+                <span class="cue-tag cue-action">👉 Slide transition: Moving to client asset delivery</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 4: Asset Pipeline & CSS -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">03 / Assets & Pipeline</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Bespoke Design & <span class="gradient-text">Vite Compilation</span></h2>
+                    <p class="slide-desc">Expenser bypasses generic component frameworks, delivering customized HSL CSS rules directly through Vite's production bundler.</p>
+                    <ul class="slide-bullets">
+                        <li><strong>Dark UI System:</strong> Uses variables for background scales, glass opacity borders, and neon-emerald accents.</li>
+                        <li><strong>Vite Bundler:</strong> Compiles CSS and Javascript source files, outputting production-ready files in `public/build/assets/`.</li>
+                        <li><strong>Server Delivery:</strong> When compiling for production, removing the temporary `public/hot` file tells Laravel to serve assets statically from the build folder.</li>
+                    </ul>
+                </div>
+                <div class="slide-visual">
+                    <img class="visual-img" src="screenshots/dashboard.png" alt="Expenser Dashboard Theme">
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Vite Asset Bundler</span>
+                <span>Slide 4</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 4: CSS Design & Vite Compilation
+            </div>
+            <div class="notes-script">
+                "Our styling strategy is custom-designed. We did not use standard Tailwind templates or Bootstrap. Instead, we built a bespoke dark CSS framework from scratch using HSL color tokens. This gives us total control over details like borders, glowing elements, and responsive flexboxes.
+                <br><br>
+                Vite is used to compile and bundle our assets. When Vite compiles for production, it places the assets in the `public/build` directory and creates a `manifest.json`. During development, Vite creates a `public/hot` file to run a hot-reloading dev server. If that server is stopped, the presence of the stale `hot` file causes assets to fail. Removing the `hot` file instructs Laravel's `@vite` helper to serve the compiled, static CSS and JS files instead."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">👉 Explain: Stale public/hot vs Static assets</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Custom HSL gradients & Glassmorphism</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 5: Login Flow Overview -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">04 / Login Architecture</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Breeze Authentication <span class="gradient-text">Lifecycle</span></h2>
+                    <p class="slide-desc">Expenser's secure entry-point relies on Laravel Breeze's session authentication backend, wrapped in our custom dark layout.</p>
+                    <ul class="slide-bullets">
+                        <li><strong>Credential Entry:</strong> Secure login form submits the user's email and password to the server.</li>
+                        <li><strong>Database Match:</strong> Laravel hashes the input and matches it against the stored bcrypt hash in SQLite.</li>
+                        <li><strong>Session Cookie:</strong> If valid, Laravel starts a secure database session and sends a encrypted cookie to track the user.</li>
+                        <li><strong>Middleware Route Protection:</strong> Non-authenticated users trying to access dashboard routes are redirected back to the login page.</li>
+                    </ul>
+                </div>
+                <div class="slide-visual">
+                    <img class="visual-img" src="screenshots/login.png" alt="Login Interface">
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Login Architecture</span>
+                <span>Slide 5</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 5: Login Flow & Breeze Setup
+            </div>
+            <div class="notes-script">
+                "Let's move on to the authentication flow. We implemented Laravel Breeze to handle user login, registration, and password recovery.
+                <br><br>
+                We customized Breeze's views with our dark theme. When a user logs in, their credentials are submitted over POST to the `login` route. Laravel hashes the password and verifies it against the hashed record in SQLite. Once validated, it starts a secure session (configured in `.env` to store sessions in the database) and sets a session cookie in the user's browser. This session cookie is verified on every subsequent request."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">👉 Show how guest.blade.php handles login views</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Clean Session-Based Security</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 6: Login Security & Middleware -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">05 / Security Measures</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Active Security & <span class="gradient-text">Rate Limiting</span></h2>
+                    <p class="slide-desc">Expenser builds security directly into the HTTP pipeline to protect user accounts and prevent brute-force attacks.</p>
+                    <ul class="slide-bullets">
+                        <li><strong>CSRF Injection:</strong> Every login form generates a unique session token to block Cross-Site Request Forgery.</li>
+                        <li><strong>Attempt Throttling:</strong> Built-in rate limiter restricts users to 5 login attempts per minute, locking out IPs on failure.</li>
+                        <li><strong>Password Salting:</strong> Passwords are cryptographically salted and hashed using bcrypt (12 cost factor rounds).</li>
+                        <li><strong>Auth Guard Middleware:</strong> The `auth` middleware protects all routes under `/dashboard` and `/groups`.</li>
+                    </ul>
+                </div>
+                <div class="slide-visual">
+                    <div class="code-container">
+                        <span class="code-comment">// Routes group with auth middleware</span>
+                        <br>Route::<span class="code-function">middleware</span>([<span class="code-string">'auth'</span>, <span class="code-string">'verified'</span>])-><span class="code-function">group</span>(<span class="code-keyword">function</span> () {
+                        <br>&nbsp;&nbsp;&nbsp;&nbsp;<span class="code-comment">// Authenticated routes</span>
+                        <br>&nbsp;&nbsp;&nbsp;&nbsp;Route::<span class="code-function">get</span>(<span class="code-string">'/dashboard'</span>, [DashboardController::class, <span class="code-string">'index'</span>])-><span class="code-function">name</span>(<span class="code-string">'dashboard'</span>);
+                        <br>&nbsp;&nbsp;&nbsp;&nbsp;Route::<span class="code-function">resource</span>(<span class="code-string">'groups'</span>, GroupController::class);
+                        <br>});
+                    </div>
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>Security Pipeline</span>
+                <span>Slide 6</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 6: Login Security & Middleware Details
+            </div>
+            <div class="notes-script">
+                "Security is integrated directly into our routing pipeline. 
+                <br><br>
+                First, **CSRF protection** is enforced on all post requests. If a request is submitted without a valid token, Laravel immediately returns a 419 error.
+                <br><br>
+                Second, we use **Login Rate Limiting** to prevent brute-force attacks. The system allows a maximum of five login attempts per minute. If exceeded, it locks the account-IP combination for 60 seconds.
+                <br><br>
+                Third, passwords are hashed using **Bcrypt** with a work factor of 12.
+                <br><br>
+                Finally, we use the `auth` middleware to restrict access to sensitive routes, ensuring that unauthenticated users cannot view group expenses or settle debts."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">👉 Explain how auth middleware redirects to /login</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Multi-layered login security</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Complete User Journey -->
+    <section class="presentation-page">
+        <div class="slide-area">
+            <div class="slide-header">
+                <div class="slide-logo">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    </div>
+                    <span>Expenser</span>
+                </div>
+                <span class="slide-topic">06 / User Journey</span>
+            </div>
+            <div class="slide-content">
+                <div class="slide-text">
+                    <h2 class="slide-title">Lifecycle: <span class="gradient-text">Registration to Logout</span></h2>
+                    <p class="slide-desc">The application ensures a seamless, secure flow as users register, authenticate, view records, and log out.</p>
+                    <ul class="slide-bullets">
+                        <li><strong>Registration:</strong> New users create an account; passwords are hashed and saved.</li>
+                        <li><strong>Authentication:</strong> Registered users log in; a session is initialized and session cookies are sent.</li>
+                        <li><strong>Secure Session:</strong> Users browse groups, log expenses, and settle balances under middleware protection.</li>
+                        <li><strong>Logout:</strong> Destroys the server session, invalidates cookies, and redirects the user back to the landing page.</li>
+                    </ul>
+                </div>
+                <div class="slide-visual">
+                    <img class="visual-img" src="screenshots/profile.png" alt="Profile Page Settings">
+                </div>
+            </div>
+            <div class="slide-footer">
+                <span>User Lifecycle</span>
+                <span>Slide 7</span>
+            </div>
+        </div>
+        
+        <div class="notes-divider">
+            <span class="notes-divider-line"></span>
+            <span class="notes-divider-label">Speaker Notes</span>
+            <span class="notes-divider-line"></span>
+        </div>
+
+        <div class="speaker-notes-area">
+            <div class="notes-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                Slide 7: Authentication Lifecycle Summary
+            </div>
+            <div class="notes-script">
+                "To conclude our authentication deep dive, let's trace the full lifecycle. A new user registers, hashes their credentials, and is logged in. 
+                <br><br>
+                While logged in, they can update their profile information or change their password securely. When they log out, the session is deleted from the database and the session cookies are cleared, redirecting the user back to the landing page. 
+                <br><br>
+                This ensures a complete, secure lifecycle from registration to logout."
+            </div>
+            <div class="notes-cues">
+                <span class="cue-tag cue-action">⏹ FINISH PRESENTATION</span>
+                <span class="cue-tag cue-highlight">💡 Highlight: Clean authentication lifecycle</span>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
